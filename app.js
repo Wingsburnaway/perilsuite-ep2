@@ -1,26 +1,20 @@
 (function () {
-  const { MEMBERS, PHASES, VOX, SONGS, CHAT_LYRICS_NOTE, THEMES, ALBUM_SUMMARY, HERO_LINES, PROJECT, SCHEDULE, RATES, TEAM, STAGE_OWNERS } = window.PS_DATA;
+  const { MEMBERS, PHASES, VOX, SONGS, LYRICS, STAGE_STATUS, THEMES, ALBUM_SUMMARY, HERO_LINES, PROJECT, SCHEDULE, TEAM, STAGE_OWNERS } = window.PS_DATA;
   const NSTAGES = PHASES.reduce((n, p) => n + p.stages.length, 0);
-  const SCORE = { 3: "Please yes", 2: "Sure", 1: "Don't feel it" };
   const LBL = { done: "Done (confirmed)", unc: "Unknown", tbd: "Unknown" };
 
   const userKey = "ps-ep2-user";
   const $ = (s, r = document) => r.querySelector(s);
   const $$ = (s, r = document) => [...r.querySelectorAll(s)];
   const esc = (s) => String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/"/g, "&quot;");
-  let reviews = {};
-  let stages = {};
+  let sessionPass = null;
   let phFilter = "pre";
-  const latestStage = (songId, stage) => {
-    const list = stages[songId] || [];
-    for (let i = list.length - 1; i >= 0; i--) if (list[i].stage === stage) return list[i];
-    return null;
-  };
-  const defaultSt = (stage, song) => "unc";
   const st = (stage, song) => {
-    const last = latestStage(song.id, stage);
-    if (last) return last.done ? "done" : (VOX.has(stage) ? "tbd" : "unc");
-    return defaultSt(stage, song);
+    const row = (STAGE_STATUS && STAGE_STATUS[song.id]) || {};
+    const v = row[stage];
+    if (v === "done" || v === true) return "done";
+    if (v === "tbd") return "tbd";
+    return "unc";
   };
   const countDone = (stage) => SONGS.filter((s) => st(stage, s) === "done").length;
   const mk = (s) => `<span class="mk ${s}" role="img" aria-label="${LBL[s]}" title="${LBL[s]}"></span>`;
@@ -32,7 +26,7 @@
     } catch { return iso; }
   };
   const memberByName = (name) => MEMBERS.find((m) => m.name === name) || null;
-  /* Codes are compared by SHA-256 of the lowercased input (see data.js / private/login_codes.md). */
+  /* Passwords are compared by SHA-256 of the lowercased input (see data.js / private/login_codes.md). */
   async function sha256Hex(str) {
     const buf = new TextEncoder().encode(str);
     if (window.crypto && crypto.subtle) {
@@ -63,29 +57,6 @@
     return MEMBERS.find((m) => m.hash === h) || null;
   };
 
-  const isScore = (v) => v === 1 || v === 2 || v === 3;
-  const currentScores = (entries) => {
-    const map = {};
-    (entries || []).forEach((e) => { if (isScore(e.score)) map[e.user] = e.score; });
-    return map;
-  };
-  const fmtAvg = (avg) => {
-    const x = Math.round(avg * 100) / 100;
-    return x.toFixed(2).replace(/\.?0+$/, "") || "0";
-  };
-  /* Score privacy (Rob t115u): everyone except Rob sees only their OWN scores. Other members'
-     notes stay visible; only their score values are stripped. Client-side only: the rows are still
-     readable with the public anon key. */
-  const seesAll = () => user === "Rob";
-  const vis = (entries) => seesAll() ? (entries || []) : (entries || []).map((e) => (e.user === user ? e : Object.assign({}, e, { score: null })));
-  const songTally = (entries) => {
-    const scores = Object.values(currentScores(vis(entries)));
-    if (!scores.length) return { avg: null, votes: 0, text: "—" };
-    const avg = scores.reduce((a, b) => a + b, 0) / scores.length;
-    const votes = scores.length;
-    if (!seesAll()) return { avg, votes, text: fmtAvg(avg) + " · " + (SCORE[avg] || "") };
-    return { avg, votes, text: fmtAvg(avg) + " · " + votes + " vote" + (votes === 1 ? "" : "s") };
-  };
   const statusRank = (status) => {
     if (status === "done") return 3;
     if (status === "tbd") return 0;
@@ -159,15 +130,21 @@
 
   $("#enter").addEventListener("submit", async (e) => {
     e.preventDefault();
-    const found = await matchMember($("#code").value);
+    const typed = $("#code").value.trim().toLowerCase();
+    const found = await matchMember(typed);
     const err = $("#gate-err");
     if (!found) {
-      err.textContent = "That code isn't on the list.";
+      err.textContent = "That password isn't recognized.";
       $("#code").select();
       return;
     }
     user = found.name;
+    sessionPass = typed;
     saveUser(user);
+    if (window.PSRates && window.PSRates.canSee(user)) {
+      try { await window.PSRates.unlock(user, sessionPass); }
+      catch (unlockErr) { /* signed in; rates section will ask again if needed */ }
+    }
     err.textContent = "";
     updateHeroCounts();
     paintBreakouts();
@@ -177,6 +154,8 @@
   $("#signout").addEventListener("click", () => {
     localStorage.removeItem(userKey);
     user = null;
+    sessionPass = null;
+    if (window.PSRates) window.PSRates.lock();
     $("#code").value = "";
     paintBreakouts();
     gate();
@@ -199,16 +178,7 @@
     list.sort((a, b) => {
       let r = 0;
       if (key === "n") r = cmp(a.n, b.n);
-      else if (key === "score") {
-        const ta = songTally(reviews[a.id]);
-        const tb = songTally(reviews[b.id]);
-        const va = ta.votes ? ta.avg : null;
-        const vb = tb.votes ? tb.avg : null;
-        if (va === null && vb === null) r = 0;
-        else if (va === null) r = 1;
-        else if (vb === null) r = -1;
-        else r = cmp(va, vb);
-      } else if (key.slice(0, 6) === "stage:") {
+      else if (key.slice(0, 6) === "stage:") {
         r = cmp(statusRank(st(key.slice(6), a)), statusRank(st(key.slice(6), b)));
       }
       return r || (a.n - b.n);
@@ -217,9 +187,7 @@
   }
   function tableRows() {
     return sortedSongs().map((s) => {
-      const tly = songTally(reviews[s.id]);
-      const scoreCell = tly.votes ? (seesAll() ? `${fmtAvg(tly.avg)} <span class="muted">· ${tly.votes}</span>` : `${fmtAvg(tly.avg)} <span class="muted">· you</span>`) : "—";
-      return `<tr data-song="${esc(s.title.toLowerCase())}"><td class="song"><button type="button" data-goto="${s.id}" aria-label="Open song card: ${esc(s.title)}"><span class="i">${String(s.n).padStart(2, "0")}</span>${esc(s.title)}</button></td><td class="score-col">${scoreCell}</td>${PHASES.map((p) => p.stages.map((x, i) =>
+      return `<tr data-song="${esc(s.title.toLowerCase())}"><td class="song"><button type="button" data-goto="${s.id}" aria-label="Open song card: ${esc(s.title)}"><span class="i">${String(s.n).padStart(2, "0")}</span>${esc(s.title)}</button></td>${PHASES.map((p) => p.stages.map((x, i) =>
         `<td data-c="${p.id}" class="${i ? "" : "grp"} ${VOX.has(x) ? "dim" : ""}">${mk(st(x, s))}</td>`
       ).join("")).join("")}</tr>`;
     }).join("");
@@ -235,8 +203,8 @@
       <p id="scrollnote" class="note" hidden>All ${NSTAGES} stages: the table scrolls sideways → song names stay pinned.</p>
       <div class="gridwrap" tabindex="0" role="region" aria-label="Song by stage table">
       <table id="tbl"><caption class="sr">All songs by pipeline stage</caption>
-      <thead><tr class="ph"><th class="song"></th><th class="score-col"></th>${PHASES.map((p) => `<th colspan="${p.stages.length}" class="${p.id} grp" data-c="${p.id}">${p.name}</th>`).join("")}</tr>
-      <tr>${sortHeader("n", "Song", "song")}${sortHeader("score", seesAll() ? "Score" : "Your score", "score-col")}${PHASES.map((p) => p.stages.map((s, i) =>
+      <thead><tr class="ph"><th class="song"></th>${PHASES.map((p) => `<th colspan="${p.stages.length}" class="${p.id} grp" data-c="${p.id}">${p.name}</th>`).join("")}</tr>
+      <tr>${sortHeader("n", "Song", "song")}${PHASES.map((p) => p.stages.map((s, i) =>
         sortHeader("stage:" + s, s, (i ? "" : "grp ") + (VOX.has(s) ? "dim" : ""), `data-c="${p.id}"`, "")
       ).join("")).join("")}</tr></thead>
       <tbody>${tableRows()}</tbody></table></div>`;
@@ -253,66 +221,20 @@
     return `<li><span>${label}</span><span class="muted">TBD</span></li>`;
   }
 
+  function lyricsText(s) {
+    const fromMap = LYRICS && LYRICS[s.id];
+    return String(fromMap != null ? fromMap : (s.lyrics || "")).trim();
+  }
   function lyricsBlock(s) {
-    if (s.lyrics) return `<div class="ly">${esc(s.lyrics)}</div>`;
-    if (s.lyricsStatus === "chat") return `<p class="muted">${esc(CHAT_LYRICS_NOTE)}</p>`;
-    return `<p class="muted">TBD — lyrics not on file yet.</p>`;
-  }
-
-  function reviewLog(entries) {
-    const list = vis(entries).slice().reverse();
-    const items = list.map((e) => {
-      const notes = String(e.notes || "").trim();
-      const scored = isScore(e.score);
-      if (!notes && !scored) return "";
-      if (notes) {
-        const pill = scored ? `<span class="score-pill">${e.score} · ${SCORE[e.score]}</span>` : "";
-        return `<li><span class="who">${esc(e.user)}</span><span class="when">${esc(fmt(e.ts))}</span><div>${pill}${esc(notes)}</div></li>`;
-      }
-      return `<li class="score-only"><span class="who">${esc(e.user)}</span><span class="when">${esc(fmt(e.ts))}</span><div>${esc(e.user)} set score ${e.score}</div></li>`;
-    }).filter(Boolean);
-    if (!items.length) return `<p class="muted">No reviews yet.</p>`;
-    return `<h4 class="ph">Log</h4><ul class="log">${items.join("")}</ul>`;
-  }
-  function currentScoresLine(entries) {
-    const scores = currentScores(vis(entries));
-    const names = Object.keys(scores);
-    if (!names.length) return "";
-    const bits = names.map((name) => `<span class="cs">${esc(name)} <span class="score-pill">${scores[name]} · ${SCORE[scores[name]]}</span></span>`);
-    return `<p class="current-scores"><b>${seesAll() ? "Current scores" : "Your score"}</b> ${bits.join("")}</p>`;
-  }
-  function reviewForm(s, entries) {
-    const mine = currentScores(entries)[user];
-    return `<form class="rev" data-rev="${s.id}">
-      <p class="muted">Reviewing as <b>${esc(user)}</b>. Add notes anytime. Your score can be changed, but only your latest score counts in the tally.${seesAll() ? "" : " Other members' scores stay hidden until the record is put together; their notes still show."}</p>
-      <div class="scores" role="radiogroup" aria-label="Score">
-        ${[3, 2, 1].map((n) => `<label><input type="radio" name="score-${s.id}" value="${n}" ${mine === n ? "checked" : ""}> <strong>${n}</strong> — ${SCORE[n]}</label>`).join("")}
-      </div>
-      <label class="sr" for="notes-${s.id}">Notes</label>
-      <textarea id="notes-${s.id}" placeholder="Add a note"></textarea>
-      <button class="btn save" type="submit">Save review</button>
-      <p class="note" data-saved hidden>Saved for the band.</p>
-      </form>
-      ${currentScoresLine(entries)}
-      ${reviewLog(entries)}`;
+    const text = lyricsText(s);
+    if (!text) return `<div class="lyr-view"><p class="muted lyr-soon">Lyrics coming soon</p></div>`;
+    return `<div class="lyr-view"><pre class="ly lyr-text">${esc(text)}</pre></div>`;
   }
 
   function stageItem(s, x) {
     const status = st(x, s);
     const dim = VOX.has(x) ? "dim" : "";
-    if (user === "Rob") {
-      return `<li class="${dim}"><label class="chk"><input type="checkbox" data-stage-song="${esc(s.id)}" data-stage="${esc(x)}" ${status === "done" ? "checked" : ""}> ${mk(status)}${esc(x)}</label></li>`;
-    }
     return `<li class="${dim}">${mk(status)}${esc(x)}</li>`;
-  }
-
-  function stageLog(entries) {
-    const log = (entries || []).slice().reverse();
-    if (!log.length) return "";
-    return `<h4 class="ph">Stage log</h4>
-      <ul class="log stage-log">${log.map((e) =>
-        `<li><span class="who">${esc(e.user)}</span><span class="when">${esc(fmt(e.ts))}</span><div>${esc(e.user)} ${e.done ? "checked" : "unchecked"} ${esc(e.stage)}</div></li>`
-      ).join("")}</ul>`;
   }
 
 
@@ -439,24 +361,13 @@
     </div>`;
   }
 
-  function card(s, reviews) {
-    const entries = (reviews[s.id] || []);
-    const lc = window.hasLyricCard && window.hasLyricCard(s.id);
-    const lcfg = lc && window.WBA_CARDS ? window.WBA_CARDS.find((x) => x.id === s.id) : null;
-    return `<article class="card${lc ? " has-art" : ""}" id="song-${s.id}" data-song="${esc(s.title.toLowerCase())}">
-      ${lc ? `<div class="card-bg" data-bg="assets/lyrics/bg_${esc(s.id)}.webp" style="--card-sky:${lcfg.sky}" aria-hidden="true"></div>` : ""}
+  function card(s) {
+    return `<article class="card" id="song-${s.id}" data-song="${esc(s.title.toLowerCase())}">
       <span class="num" aria-hidden="true">${String(s.n).padStart(2, "0")}</span>
       <h3>${esc(s.title)}</h3>
-      <dl class="meta">
-        <div><dt>Song</dt><dd>${esc(s.title)}</dd></div>
-        <div><dt>Year written</dt><dd>${esc(s.year)}</dd></div>
-        <div><dt>Tuning</dt><dd>${esc(s.tuning)}</dd></div>
-        <div><dt>Demo title</dt><dd>${esc(s.demoTitle || "TBD")}</dd></div>
-      </dl>
       ${miniPlayer(s)}
-      <div class="tally">${esc(songTally(entries).votes ? (seesAll() ? "Band score  " : "Your score  ") + songTally(entries).text : (seesAll() ? "No scores yet" : "You haven't scored this yet"))}</div>
       ${PHASES.map((p) => `<div class="barl"><span>${p.name}</span><span>${pct(s, p) ? pct(s, p) + "% confirmed" : "Unknown"}</span></div><div class="bar" role="img" aria-label="${p.name}: ${pl(s, p)}"><i style="width:${pct(s, p)}%"></i></div>`).join("")}
-      ${lc ? `<div class="lyr-row"><button type="button" class="lyr-btn" data-lyric="${esc(s.id)}" aria-haspopup="dialog">Lyrics</button></div>` : `<details class="brk"><summary>Lyrics</summary>${lyricsBlock(s)}</details>`}
+      <details class="brk" data-lyrics="${s.id}"><summary>Lyrics</summary>${lyricsBlock(s)}</details>
       <details class="brk"><summary>Downloads</summary>
         <ul class="dl">
           ${mediaRow("Original", s.media.main, s.media.main && s.media.main.note ? s.media.main.note : "pre-production mix")}
@@ -466,26 +377,24 @@
           ${dlRow("Drum demo", s.drumDemo, s.drumFound)}
         </ul>
       </details>
-      <details class="brk" data-review="${s.id}"><summary>Review</summary><div class="rev-body">${reviewForm(s, entries)}</div></details>
       <details class="brk" data-pipe="${s.id}"><summary>Pipeline</summary>
         ${PHASES.map((p) => `<div class="ph">${p.name}</div><ul class="stages">${p.stages.map((x) => stageItem(s, x)).join("")}</ul>`).join("")}
-        ${stageLog(stages[s.id])}
       </details>
     </article>`;
   }
 
-  function cards(reviews) {
-    return `<p class="lead">Open a card for downloads (when files are on a shared link), reviews, or the pipeline. Bars fill with confirmed work only — empty means unknown, not zero.${user === "Rob" ? " As Rob, you can check stages off in the pipeline breakout; each check is logged like a review." : ""}</p>
-      <div class="songs" id="cards">${SONGS.map((s) => card(s, reviews)).join("")}</div>`;
+  function cards() {
+    return `<p class="lead">Open a card for lyrics, downloads (when files are on a shared link), or the pipeline. Bars fill with confirmed work only — empty means unknown, not zero. Status is published with the site.</p>
+      <div class="songs" id="cards">${SONGS.map((s) => card(s)).join("")}</div>`;
   }
 
   function phase(p) {
     const nSongs = SONGS.length;
     const d = p.id === "pre"
-      ? "Pre-production runs through the end of 2026, in this order: MIDI Drums, Guitar, Bass, Vocals, Drum Demo. The bass tracked here is the record bass (Twitch exits by year end). Status stays unknown until a stage is checked."
+      ? "Pre-production runs through the end of 2026, in this order: MIDI Drums, Guitar, Bass, Vocals, Drum Demo. The bass tracked here is the record bass (Twitch exits by year end). Status stays unknown until it is marked done in the published project data."
       : p.id === "prod"
-        ? "Drums at The Orb (date TBA, targeting late January / early February 2027), with Jman as drummer. Jman owns drums, including The Orb tracking and drum-edit reviews. Then rhythm guitar, lead guitar, and vocals — rhythm guitar and vocals proposed at AB's studio. Lead Guitars and Aux/Other have no editing phase. Re-amp is 3 hours at Hendyamps after all elements are recorded and edited."
-        : "Mixing by Rob Hitchcock, then Atmos mixes (Nick Matzke, $150 / song — the Tom Houck EP rate) and mastering (Chris Henderson; rate TBD). Status is unknown until checked.";
+        ? "Drums at The Orb (date TBA, targeting late January / early February 2027), with Jman as drummer. Jman owns drums, including The Orb tracking and the drum-edit stage. Then rhythm guitar, lead guitar, and vocals — rhythm guitar and vocals proposed at AB's studio. Lead Guitars and Aux/Other have no editing phase. Re-amp is 3 hours at Hendyamps after all elements are recorded and edited."
+        : "Mixing by Rob Hitchcock, then Atmos mixes (Nick Matzke, at the verified Tom Houck EP rate) and mastering (Chris Henderson; rate TBD). Amounts are in Rates & budget. Status is unknown until it is marked done in the published project data.";
     const confirmedPct = Math.round(100 * SONGS.reduce((n, s) => n + p.stages.filter((x) => st(x, s) === "done").length, 0) / (p.stages.length * nSongs));
     const label = confirmedPct ? confirmedPct + "% confirmed · rest unknown" : "Unknown · nothing confirmed yet";
     return `<div class="two"><div><p class="lead">${p.stages.length} stages × ${nSongs} songs. ${d}</p><ul class="list">${p.stages.map((x) => {
@@ -513,13 +422,12 @@
       return `<tr class="${tot ? "tot" : ""}"><td>${esc(r.item)}</td><td>${esc(r.rate || "")}</td><td>${esc(r.qty || "")}</td><td class="n">${esc(r.amount || "")}</td><td class="note-cell">${esc(r.note || "")}</td></tr>`;
     }).join("");
   }
-  function ratesView() {
-    const R = RATES || { producer: [], outside: [], studiosOnFile: [], sourceNotes: [] };
+  function ratesTables(R) {
     const notes = (R.sourceNotes || []).map((n) => `<li>${esc(n)}</li>`).join("");
-    const studios = (R.studiosOnFile || []).map((s) =>
-      `<tr><td>${esc(s.studio)}</td><td>${esc(s.location)}</td><td class="n">${esc(s.rate)}</td></tr>`
+    const studios = (R.studiosOnFile || []).map((strow) =>
+      `<tr><td>${esc(strow.studio)}</td><td>${esc(strow.location)}</td><td class="n">${esc(strow.rate)}</td></tr>`
     ).join("");
-    return `<p class="lead">Figures below are only those Rob gave for this project or that were found on file. Anything not quoted is marked TBD — no prices were invented.</p>
+    return `<p class="lead">Figures below are only those Rob gave for this project or that were found on file. Anything not quoted is marked TBD — no prices were invented. This section is encrypted in the public files and opens only for AB and Rob.</p>
       <ul class="src-notes">${notes}</ul>
       <h4 class="ph">Producer</h4>
       <table class="rate-table"><thead><tr><th>Item</th><th>Rate</th><th>Qty</th><th>Amount</th><th>Notes</th></tr></thead>
@@ -532,14 +440,28 @@
       <table class="rate-table"><thead><tr><th>Studio</th><th>Location</th><th>Rate</th></tr></thead>
       <tbody>${studios}</tbody></table>`;
   }
+  function ratesView() {
+    if (!window.PSRates || !window.PSRates.canSee(user)) {
+      return `<p class="lead">Rates & budget is only available to AB and Rob.</p>`;
+    }
+    const cached = window.PSRates.getCached();
+    if (cached) return ratesTables(cached);
+    return `<p class="lead">This section is encrypted and only opens for AB and Rob. Enter your password to view the figures for the rest of this browser session.</p>
+      <form class="rates-unlock" data-rates-unlock>
+        <label for="rates-pass">Password</label>
+        <input id="rates-pass" name="rates-pass" type="password" autocomplete="current-password" required>
+        <button class="btn save" type="submit">Unlock Rates & budget</button>
+        <p class="err" data-rates-err role="alert"></p>
+      </form>`;
+  }
 
   function teamView() {
     const items = (TEAM || []).map((t) =>
       `<li><b>${esc(t.name)}</b><span class="team-role">${esc(t.role)}</span>${t.detail ? `<span class="team-detail">${esc(t.detail)}</span>` : ""}</li>`
     ).join("");
-    return `<p class="lead">Everyone with a login code for this site.</p>
+    return `<p class="lead">Everyone with a login for this site.</p>
       <ul class="team-list">${items}</ul>
-      <p class="note">Twitch's pre-production bass is the bass on the record, which lets Twitch leave the project by the end of 2026. Drums will be rigidly quantized so that bass lines up. Jman owns drums on this EP, including tracking at The Orb and drum-edit reviews. AB's studio remains the proposed room for rhythm guitar and vocals.</p>`;
+      <p class="note">Twitch's pre-production bass is the bass on the record, which lets Twitch leave the project by the end of 2026. Drums will be rigidly quantized so that bass lines up. Jman owns drums on this EP, including tracking at The Orb and the drum-edit stage. AB's studio remains the proposed room for rhythm guitar and vocals.</p>`;
   }
 
   function ART() {
@@ -568,17 +490,25 @@
     return `${done}/${pre.stages.length * n} confirmed · through Dec 2026`;
   };
 
-  const open = new Set(["all", "songs", "schedule", "rates"]);
-  const SECS = () => [
-    { id: "all", t: "All songs — overview", m: `${SONGS.length} songs · ${NSTAGES} stages`, b: grid },
-    { id: "songs", t: "Song cards", m: `${SONGS.length} cards`, b: () => cards(reviews) },
-    { id: "playlist", t: "Playlist", m: PLAYLIST.length ? `${PLAYLIST.length} tracks` : "No mixes on file yet", b: playlist },
-    { id: "schedule", t: "Schedule", m: "Pre-pro through 2026 · drums TBA", b: scheduleView },
-    { id: "rates", t: "Rates & budget", m: "On-file figures only · rest TBD", b: ratesView },
-    ...PHASES.map((p) => ({ id: p.id, t: p.name, m: p.id === "pre" ? preMeta() : p.id === "prod" ? "Drums TBA · then guitars & vocals" : "Mix · Atmos · Master", b: () => phase(p) })),
-    { id: "team", t: "Team", m: `${MEMBERS.length} login codes`, b: teamView },
-    { id: "art", t: "Artwork / brand", m: "Stage banner · filigree · silhouette", b: ART }
-  ];
+  const open = new Set(["all", "songs", "schedule"]);
+  const SECS = () => {
+    const list = [
+      { id: "all", t: "All songs — overview", m: `${SONGS.length} songs · ${NSTAGES} stages`, b: grid },
+      { id: "songs", t: "Song cards", m: `${SONGS.length} cards`, b: cards },
+      { id: "playlist", t: "Playlist", m: PLAYLIST.length ? `${PLAYLIST.length} tracks` : "No mixes on file yet", b: playlist },
+      { id: "schedule", t: "Schedule", m: "Pre-pro through 2026 · drums TBA", b: scheduleView }
+    ];
+    if (window.PSRates && window.PSRates.canSee(user)) {
+      list.push({ id: "rates", t: "Rates & budget", m: "Encrypted · AB and Rob", b: ratesView });
+      open.add("rates");
+    } else {
+      open.delete("rates");
+    }
+    PHASES.forEach((p) => list.push({ id: p.id, t: p.name, m: p.id === "pre" ? preMeta() : p.id === "prod" ? "Drums TBA · then guitars & vocals" : "Mix · Atmos · Master", b: () => phase(p) }));
+    list.push({ id: "team", t: "Team", m: `${MEMBERS.length} members`, b: teamView });
+    list.push({ id: "art", t: "Artwork / brand", m: "Stage banner · filigree · silhouette", b: ART });
+    return list;
+  };
 
   /* ---------- Lyric cards: lazy faded backgrounds + modal ---------- */
   let bgObs = null;
@@ -724,7 +654,7 @@
       const headRow = $("#tbl thead tr:last-child");
       if (headRow) {
         const rebuilt = document.createElement("tr");
-        rebuilt.innerHTML = `${sortHeader("n", "Song", "song")}${sortHeader("score", seesAll() ? "Score" : "Your score", "score-col")}${PHASES.map((p) => p.stages.map((s, i) =>
+        rebuilt.innerHTML = `${sortHeader("n", "Song", "song")}${PHASES.map((p) => p.stages.map((s, i) =>
           sortHeader("stage:" + s, s, (i ? "" : "grp ") + (VOX.has(s) ? "dim" : ""), `data-c="${p.id}"`, "")
         ).join("")).join("")}`;
         headRow.replaceWith(rebuilt);
@@ -736,10 +666,9 @@
     const p = e.target.closest("[data-ph]");
     if (p) { setPh(p.dataset.ph); return; }
     if (e.target.id === "csv") {
-      const rows = [["Song", "Year written", "Tuning", seesAll() ? "Score" : "Your score", seesAll() ? "Votes" : "", ...PHASES.flatMap((p) => p.stages.map((s) => p.name + ": " + s))]];
-      SONGS.forEach((s) => {
-        const tly = songTally(reviews[s.id]);
-        rows.push([s.title, s.year, s.tuning, tly.votes ? fmtAvg(tly.avg) : "", seesAll() ? (tly.votes || "") : "", ...PHASES.flatMap((p) => p.stages.map((x) => LBL[st(x, s)]))]);
+      const rows = [["Song", ...PHASES.flatMap((ph) => ph.stages.map((stName) => ph.name + ": " + stName))]];
+      SONGS.forEach((sng) => {
+        rows.push([sng.title, ...PHASES.flatMap((ph) => ph.stages.map((x) => LBL[st(x, sng)]))]);
       });
       const csv = rows.map((r) => r.map((c) => `"${String(c).replace(/"/g, '""')}"`).join(",")).join("\n");
       const a = document.createElement("a");
@@ -758,23 +687,21 @@
   });
 
   document.addEventListener("submit", async (e) => {
-    const form = e.target.closest("form.rev");
-    if (!form) return;
-    e.preventDefault();
-    const id = form.dataset.rev;
-    const raw = (form.querySelector("input[type=radio]:checked") || {}).value;
-    const picked = raw ? Number(raw) : null;
-    const notes = ((form.querySelector("textarea") || {}).value || "").trim();
-    const mine = currentScores(reviews[id] || [])[user];
-    const scoreChanged = isScore(picked) && picked !== mine;
-    if (!notes && !scoreChanged) {
-      alert(isScore(picked) || isScore(mine) ? "Change the score or add a note to save." : "Pick a score or add a note.");
+    const unlock = e.target.closest("form[data-rates-unlock]");
+    if (unlock) {
+      e.preventDefault();
+      const typed = (unlock.querySelector("#rates-pass") || {}).value || "";
+      const err = unlock.querySelector("[data-rates-err]");
+      try {
+        await window.PSRates.unlock(user, typed.trim().toLowerCase());
+        sessionPass = typed.trim().toLowerCase();
+        if (err) err.textContent = "";
+        refresh();
+      } catch (ex) {
+        if (err) err.textContent = "Could not unlock Rates & budget. Check the password and try again.";
+      }
       return;
     }
-    const scoreToSend = notes && !scoreChanged ? null : picked;
-    try { reviews[id] = await window.PSStorage.addReview(id, user, scoreToSend, notes); }
-    catch (err) { alert("Couldn't save your review. Check your connection and try again."); return; }
-    refresh();
   });
 
   function updateHeroCounts() {
@@ -785,7 +712,7 @@
     const elPre = $("#pre-count");
     const elBanner = $("#status-banner");
     if (elPre) elPre.textContent = preDone + "/" + preTotal;
-    if (elBanner) elBanner.innerHTML = `PERIL SUITE · EP 2 · <b>PRE-PRO ${preDone}/${preTotal} CONFIRMED</b> · OTHER STAGES AS CHECKED · SAVED ON THIS DEVICE`;
+    if (elBanner) elBanner.innerHTML = `PERIL SUITE · EP 2 · <b>PRE-PRO ${preDone}/${preTotal} CONFIRMED</b> · STATUSES AS PUBLISHED`;
   }
 
   function snapshotUI() {
@@ -823,27 +750,10 @@
     restoreUI(snap);
   }
 
-  document.addEventListener("change", async (e) => {
-    const box = e.target.closest("input[data-stage-song]");
-    if (!box) return;
-    if (user !== "Rob") { box.checked = !box.checked; return; }
-    const id = box.dataset.stageSong;
-    const stageName = box.dataset.stage;
-    try { stages[id] = await window.PSStorage.addStageCheck(id, stageName, box.checked, user); }
-    catch (err) { box.checked = !box.checked; alert("Couldn't save that check. Try again."); return; }
-    refresh();
-  });
-
-  $("#storage-label").textContent = window.PSStorage.label;
-  $("#song-count").textContent = String(SONGS.length);
+  if ($("#song-count")) $("#song-count").textContent = String(SONGS.length);
   startCountdown();
-
-  Promise.all([window.PSStorage.getAll(), window.PSStorage.getStages()]).catch(() => [{}, {}]).then(([rev, stg]) => {
-    reviews = rev || {};
-    stages = stg || {};
-    updateHeroCounts();
-    paintBreakouts();
-    setPh("pre");
-    gate();
-  });
+  updateHeroCounts();
+  paintBreakouts();
+  setPh("pre");
+  gate();
 })();

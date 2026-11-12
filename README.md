@@ -2,8 +2,8 @@
 
 Project site for the Peril Suite EP 2 record tracker.
 
-Live (GitHub Pages, once published): https://wingsburnaway.github.io/perilsuite-ep2/
+Live (GitHub Pages): https://wingsburnaway.github.io/perilsuite-ep2/
 
-This repository contains only the public site files. Access is by personal login code. Codes are not stored in this repo — the site compares SHA-256 hashes of lowercased codes in `data.js`. Reviews and stage checks are saved in the browser on each device until a shared backend is wired up.
+This repository contains only the public site files. Access is by personal password. Passwords are not stored in this repo — the site compares SHA-256 hashes of lowercased passwords in `data.js`. Rates & budget is encrypted (AES-GCM) and opens only for AB and Rob. Lyrics and stage status are published in `data.js` and update when the site is re-uploaded.
 
-Do not commit a `private/` folder, plaintext login codes, preview screenshots, or the 7 MB master banner PNG. The site serves web-optimized brand files under `assets/brand/`.
+Do not commit a `private/` folder, plaintext passwords, plaintext rate figures, preview screenshots, or the 7 MB master banner PNG. The site serves web-optimized brand files under `assets/brand/`.

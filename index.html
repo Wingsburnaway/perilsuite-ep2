@@ -7,7 +7,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@400;700&family=Cinzel:wght@400;500;600;700&family=Oswald:wght@300;400;500;600;700&family=Special+Elite&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="styles.css?v=202611121405">
+<link rel="stylesheet" href="styles.css?v=202611121445">
 </head>
 <body class="locked">
 
@@ -24,19 +24,18 @@
   </div>
   <div class="album" aria-hidden="true"><span>EP 2</span></div>
   <form id="enter">
-    <label for="code">Enter your login code</label>
-    <input id="code" name="code" type="text" autocomplete="username" autocapitalize="characters" spellcheck="false" required>
+    <label for="code">Enter your password</label>
+    <input id="code" name="code" type="text" autocomplete="current-password" autocapitalize="none" spellcheck="false" required>
     <button type="submit">Enter</button>
     <p id="gate-err" class="err" role="alert"></p>
   </form>
-  <p class="fine">Access is by personal login code. This is a simple gate, not strong security.</p>
+  <p class="fine">Access is by personal password. This is a simple gate, not strong security.</p>
   <div class="splash-sil" aria-hidden="true"></div>
 </div>
 
 <div id="app" hidden>
-  <div class="proof" role="note" id="status-banner">PERIL SUITE · EP 2 · STATUSES CONFIRMED WHERE CHECKED · SAVED ON THIS DEVICE</div>
+  <div class="proof" role="note" id="status-banner">PERIL SUITE · EP 2 · STATUSES AS PUBLISHED</div>
   <div class="bar-user"><span>Signed in as <b id="who">—</b> <span class="role" id="who-role"></span></span><button type="button" class="signout" id="signout">Sign out</button></div>
-  <div class="storage-note" id="storage-label" role="status"></div>
 
   <header class="hero has-banner">
     <div class="hero-bg" aria-hidden="true">
@@ -103,12 +102,13 @@
     <section aria-label="Breakout sections" id="breakouts"></section>
   </main>
   <div class="cut ox" aria-hidden="true"></div>
-  <footer><div class="footer-sil" aria-hidden="true"></div><p>Peril Suite · EP 2 · reviews and stage checks are saved on this device.</p></footer>
+  <footer><div class="footer-sil" aria-hidden="true"></div><p>Peril Suite · EP 2</p></footer>
 </div>
 
-<script src="data.js?v=202611121340"></script>
-<script src="storage.js?v=202611121340"></script>
-<script src="app.js?v=202611121352"></script>
+<script src="data.js?v=202611121445"></script>
+<script src="rates.enc.js?v=202611121445"></script>
+<script src="rates-gate.js?v=202611121445"></script>
+<script src="app.js?v=202611121445"></script>
 <script>
   document.getElementById("song-count-stat").textContent = window.PS_DATA.SONGS.length;
 </script>
