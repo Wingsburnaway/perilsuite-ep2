@@ -221,15 +221,89 @@
     return `<li><span>${label}</span><span class="muted">TBD</span></li>`;
   }
 
-  function lyricsText(s) {
-    const fromMap = LYRICS && LYRICS[s.id];
-    return String(fromMap != null ? fromMap : (s.lyrics || "")).trim();
+  function lyricsSections(s) {
+    const raw = LYRICS && Object.prototype.hasOwnProperty.call(LYRICS, s.id) ? LYRICS[s.id] : (s.lyrics || "");
+    if (raw == null || raw === "") return [];
+    if (Array.isArray(raw)) return raw;
+    const text = String(raw).replace(/\r\n/g, "\n").trim();
+    if (!text) return [];
+    const sections = [];
+    let cur = { label: "", lines: [] };
+    text.split("\n").forEach((line) => {
+      const tline = line.trimEnd();
+      if (/^[A-Za-z][A-Za-z0-9 /&-]{0,48}:\s*$/.test(tline)) {
+        if (cur.label || cur.lines.length) sections.push(cur);
+        cur = { label: tline.replace(/:\s*$/, ""), lines: [] };
+        return;
+      }
+      if (tline) cur.lines.push(tline);
+    });
+    if (cur.label || cur.lines.length) sections.push(cur);
+    return sections;
+  }
+  function sectionIsInstrumental(sec) {
+    if (!sec) return false;
+    if (sec.instrumental || sec.kind === "solo" || sec.kind === "instrumental") return true;
+    const empty = !(sec.lines && sec.lines.length);
+    return empty && sec.label && /^solo\b/i.test(sec.label);
+  }
+  function hasLyrics(s) {
+    return lyricsSections(s).some((sec) => sectionIsInstrumental(sec) || (sec.lines && sec.lines.length));
+  }
+  function renderLyricSection(sec) {
+    const inst = sectionIsInstrumental(sec);
+    const head = sec.label ? `<h4 class="lyc-sec-h">${esc(sec.label)}</h4>` : "";
+    let inner = "";
+    if (inst) {
+      inner = `<p class="lyc-inst">Instrumental</p>`;
+    } else {
+      inner = (sec.lines || []).map((line) => `<p class="lyc-line">${esc(line)}</p>`).join("");
+      if (sec.repeat) inner += `<p class="lyc-repeat"><span>× ${esc(sec.repeat)}</span></p>`;
+    }
+    const cls = "lyc-sec" + (inst ? " is-inst" : "") + (sec.label ? "" : " no-label");
+    return `<section class="${cls}">${head}${inner}</section>`;
+  }
+  function lyricCardHTML(s, idPrefix) {
+    const secs = lyricsSections(s);
+    const body = hasLyrics(s)
+      ? secs.map(renderLyricSection).join("")
+      : `<p class="lyc-soon">Lyrics coming soon</p>`;
+    const n = String(s.n).padStart(2, "0");
+    const id = `${idPrefix || "lyric"}-${esc(s.id)}`;
+    return `<article class="lyc" id="${id}">
+      <header class="lyc-head">
+        <img class="lyc-hg" src="assets/brand/ps-hourglass.png" width="80" height="80" alt="" onerror="this.onerror=null;this.src='assets/brand/hourglass-motif.svg'">
+        <p class="lyc-kicker">EP 2 · Track ${n} · Lyrics</p>
+        <h3 class="lyc-title">${esc(s.title)}</h3>
+        <div class="lyc-flourish" aria-hidden="true"><span class="orn-rule"></span><span class="orn-star"></span><span class="orn-rule"></span></div>
+      </header>
+      <div class="lyc-body">${body}</div>
+    </article>`;
   }
   function lyricsBlock(s) {
-    const text = lyricsText(s);
-    if (!text) return `<div class="lyr-view"><p class="muted lyr-soon">Lyrics coming soon</p></div>`;
-    return `<div class="lyr-view"><pre class="ly lyr-text">${esc(text)}</pre></div>`;
+    return `<div class="lyr-view">${lyricCardHTML(s, "lyric-card")}</div>`;
   }
+  function lyricsView() {
+    const n = SONGS.filter(hasLyrics).length;
+    const folds = SONGS.map((s) => {
+      const ready = hasLyrics(s);
+      return `<details class="lyc-fold"${ready && s.n === 1 ? " open" : ""}>
+        <summary>
+          <span class="lyc-fold-n">${String(s.n).padStart(2, "0")}</span>
+          <span class="lyc-fold-t">${esc(s.title)}</span>
+          <span class="lyc-fold-m">${ready ? "On file" : "Coming soon"}</span>
+        </summary>
+        ${lyricCardHTML(s)}
+      </details>`;
+    }).join("");
+    return `<p class="lead">Lyrics as Rob published them for the band. Open a card to read a song. These pages are read-only — send updates to Rob and they will be published here.</p>
+      <div class="lyc-list">${folds}</div>
+      <p class="note">${n} of ${SONGS.length} songs have lyrics on file.</p>`;
+  }
+  window.lyricCardHTML = (id) => {
+    const s = byId(id);
+    return s ? lyricCardHTML(s) : "";
+  };
 
   function stageItem(s, x) {
     const status = st(x, s);
@@ -495,6 +569,7 @@
     const list = [
       { id: "all", t: "All songs — overview", m: `${SONGS.length} songs · ${NSTAGES} stages`, b: grid },
       { id: "songs", t: "Song cards", m: `${SONGS.length} cards`, b: cards },
+      { id: "lyrics", t: "Lyrics", m: `${SONGS.filter(hasLyrics).length} of ${SONGS.length} on file`, b: lyricsView },
       { id: "playlist", t: "Playlist", m: PLAYLIST.length ? `${PLAYLIST.length} tracks` : "No mixes on file yet", b: playlist },
       { id: "schedule", t: "Schedule", m: "Pre-pro through 2026 · drums TBA", b: scheduleView }
     ];
@@ -539,10 +614,11 @@
     return lcDlg;
   }
   function openLyric(id, from) {
-    const d = lyricModal();
     const s = byId(id);
-    d.setAttribute("aria-label", (s ? s.title : "Song") + " lyric card");
-    d.querySelector(".lc-wrap").innerHTML = window.lyricCardHTML(id, "assets/lyrics/");
+    if (!s) return;
+    const d = lyricModal();
+    d.setAttribute("aria-label", s.title + " lyric card");
+    d.querySelector(".lc-wrap").innerHTML = lyricCardHTML(s);
     lcReturn = from || null;
     document.body.classList.add("lc-lock");
     if (typeof d.showModal === "function") d.showModal(); else d.setAttribute("open", "");

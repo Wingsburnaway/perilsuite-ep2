@@ -12,6 +12,8 @@
   --bronze:#9a9a94;
   --cream:#e9e7e2;
   --display:"Cinzel Decorative","Cinzel",Georgia,serif;
+  --lyric:"Cinzel",Georgia,"Times New Roman",serif;
+  --lyric-body:"Cormorant Garamond",Palatino,"Palatino Linotype",Georgia,serif;
   --grit:"Special Elite",ui-monospace,monospace;
   --smallcaps:"Special Elite",ui-monospace,monospace;
   --sans:"Oswald","Helvetica Neue",Arial,sans-serif;
@@ -1300,3 +1302,182 @@ footer p{
 .lyr-soon{margin:8px 0}
 .rates-unlock{display:flex;flex-direction:column;gap:8px;max-width:28rem;margin:12px 0}
 .rates-unlock input{font:16px/1.3 var(--sans);padding:10px 12px;background:#0e0e0e;color:var(--bone);border:1px solid #444}
+
+
+/* ===== Lyric cards (ashen, filigree, Cinzel body, Special Elite section heads) ===== */
+.lyc-list{display:flex;flex-direction:column;gap:12px;max-width:720px;margin:8px auto 0}
+.lyc-fold{border:1px solid #333;background:#111;overflow:hidden}
+.lyc-fold>summary{
+  all:unset;
+  box-sizing:border-box;
+  cursor:pointer;
+  display:grid;
+  grid-template-columns:auto 1fr auto auto;
+  align-items:center;
+  gap:14px;
+  width:100%;
+  padding:14px 16px;
+  list-style:none;
+}
+.lyc-fold>summary::-webkit-details-marker{display:none}
+.lyc-fold>summary:hover{background:#1a1a1a}
+.lyc-fold>summary:focus-visible{outline:2px solid var(--gold);outline-offset:-2px}
+.lyc-fold-n{font:500 13px/1 var(--sans);letter-spacing:.12em;color:var(--ash)}
+.lyc-fold-t{font:500 15px/1.2 var(--sans);letter-spacing:.1em;text-transform:uppercase;color:var(--bone)}
+.lyc-fold-m{font:400 10px/1 var(--grit);letter-spacing:.18em;text-transform:uppercase;color:var(--ash)}
+.lyc-fold>summary::after{content:"+";font:500 18px/1 var(--sans);color:var(--ash);width:28px;height:28px;border:1px solid #444;display:grid;place-items:center}
+.lyc-fold[open]>summary{border-bottom:1px solid #333}
+.lyc-fold[open]>summary::after{content:"–";background:var(--bone);color:#000;border-color:var(--bone)}
+
+.lyc{
+  position:relative;
+  background-color:#0a0a0a;
+  background-image:
+    image-set(url("assets/brand/ps-filigree-tl.webp") type("image/webp"), url("assets/brand/ps-filigree-tl.png") type("image/png")),
+    image-set(url("assets/brand/ps-filigree-tr.webp") type("image/webp"), url("assets/brand/ps-filigree-tr.png") type("image/png")),
+    image-set(url("assets/brand/ps-filigree-bl.webp") type("image/webp"), url("assets/brand/ps-filigree-bl.png") type("image/png")),
+    image-set(url("assets/brand/ps-filigree-br.webp") type("image/webp"), url("assets/brand/ps-filigree-br.png") type("image/png"));
+  background-repeat:no-repeat;
+  background-position:top left, top right, bottom left, bottom right;
+  background-size:92px auto;
+  border:1px solid #333;
+  color:var(--bone);
+  padding:40px 36px 48px;
+  overflow:hidden;
+}
+.lyc-fold .lyc{border:0;border-top:0}
+.lyc::before{
+  content:"";
+  position:absolute;
+  inset:12% 8% 8%;
+  background:url("assets/brand/hourglass-motif.svg") center / min(260px,52%) no-repeat;
+  opacity:.055;
+  pointer-events:none;
+  z-index:0;
+}
+.lyc-head,.lyc-body{position:relative;z-index:1}
+.lyc-head{text-align:center;margin:0 0 32px}
+.lyc-hg{width:56px;height:auto;margin:0 auto 12px;display:block;opacity:.92;filter:drop-shadow(0 0 10px rgba(233,231,226,.18))}
+.lyc-kicker{
+  font:400 10px/1 var(--grit);
+  letter-spacing:.36em;
+  text-transform:uppercase;
+  color:var(--ash);
+  margin:0 0 12px;
+}
+h3.lyc-title,.lyc-title,.card h3.lyc-title{
+  font-family:var(--lyric)!important;
+  font-weight:500!important;
+  font-size:clamp(26px,4.6vw,40px)!important;
+  line-height:1.1!important;
+  letter-spacing:.16em!important;
+  text-transform:uppercase!important;
+  color:var(--bone)!important;
+  margin:0 0 16px!important;
+  -webkit-text-stroke:0;
+  position:static;
+}
+.lyc-flourish{display:flex;align-items:center;justify-content:center;gap:10px;margin:0 auto;max-width:280px}
+.lyc-flourish .orn-rule{flex:1;height:1px;background:linear-gradient(to right, transparent, rgba(233,231,226,.5), transparent)}
+.lyc-flourish .orn-star{width:8px;height:8px;background:var(--bone);clip-path:polygon(50% 0,65% 35%,100% 50%,65% 65%,50% 100%,35% 65%,0 50%,35% 35%);flex:none;opacity:.85}
+
+.lyc-body{max-width:38em;margin:0 auto}
+.lyc-sec{margin:0 0 26px;text-align:center}
+.lyc-sec:last-child{margin-bottom:0}
+.lyc-sec.no-label{margin-top:-8px}
+.lyc-sec-h,h4.lyc-sec-h{
+  font-family:var(--grit)!important;
+  font-weight:400!important;
+  font-size:11px!important;
+  line-height:1!important;
+  letter-spacing:.28em!important;
+  text-transform:uppercase!important;
+  color:var(--ash)!important;
+  margin:0 0 14px!important;
+}
+.lyc-line{
+  font:400 19px/1.7 var(--lyric-body);
+  color:var(--bone);
+  margin:0;
+  text-wrap:pretty;
+}
+.lyc-line + .lyc-line{margin-top:1px}
+.lyc-inst{
+  font:italic 400 14px/1 var(--lyric-body);
+  letter-spacing:.22em;
+  text-transform:uppercase;
+  color:var(--ash);
+  margin:2px 0 0;
+}
+.lyc-inst::before,.lyc-inst::after{content:" — "}
+.lyc-repeat{margin:14px 0 0;text-align:center}
+.lyc-repeat span{
+  display:inline-block;
+  font:400 11px/1 var(--grit);
+  letter-spacing:.22em;
+  text-transform:uppercase;
+  color:var(--bone);
+  border:1px solid #666;
+  padding:6px 12px 5px;
+}
+.lyc-soon{
+  text-align:center;
+  font:400 14px/1.5 var(--grit);
+  color:var(--ash);
+  margin:8px 0 0;
+  letter-spacing:.06em;
+}
+
+.card .lyr-view{margin:8px 0 2px;max-height:none;overflow:visible}
+.card .lyc{
+  padding:28px 16px 32px;
+  background-size:64px auto;
+  margin-top:4px;
+}
+.card h3.lyc-title{
+  font-size:clamp(22px,6vw,30px)!important;
+  margin:0 0 14px!important;
+}
+.card .lyc-line{font-size:16.5px;line-height:1.65}
+.card .lyc-hg{width:44px}
+
+.lc-modal{
+  border:1px solid #333;
+  background:#000;
+  color:var(--bone);
+  padding:0;
+  max-width:min(740px,96vw);
+  width:100%;
+  max-height:94vh;
+  overflow:auto;
+}
+.lc-modal::backdrop{background:rgba(0,0,0,.82)}
+.lc-modal .lc-wrap{padding:0}
+.lc-modal .lyc{border:0}
+.lc-x{
+  all:unset;
+  box-sizing:border-box;
+  cursor:pointer;
+  position:sticky;
+  top:8px;
+  float:right;
+  z-index:3;
+  margin:8px 8px 0 0;
+  width:36px;height:36px;
+  display:grid;place-items:center;
+  border:1px solid #555;
+  background:#0a0a0a;
+  color:var(--bone);
+  font:500 16px/1 var(--sans);
+}
+.lc-x:hover{background:var(--bone);color:#000}
+body.lc-lock{overflow:hidden}
+
+@media(max-width:620px){
+  .lyc{padding:28px 16px 36px;background-size:64px auto}
+  .lyc-line{font-size:17.5px;line-height:1.7}
+  .lyc-head{margin-bottom:24px}
+  .lyc-sec{margin-bottom:22px}
+  .lyc-fold>summary{gap:10px;padding:12px 12px}
+  .lyc-fold-t{font-size:13px}
+}

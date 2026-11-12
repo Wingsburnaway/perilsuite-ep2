@@ -56,13 +56,258 @@ window.PS_DATA = (() => {
     { id: "the-wheel",   title: "The Wheel" }
   ];
 
-  /* Lyrics Rob publishes for the band. Keyed by song id. Leave a string empty
-     (or omit the song) to show "Lyrics coming soon." Re-upload this file to update. */
+  /* Lyrics Rob publishes for the band. Keyed by song id.
+     Each song is an array of sections:
+       { label, lines }                  — lyric section
+       { label, instrumental: true }     — empty Solo (renders as an instrumental marker)
+       { label, lines, repeat: 8 }       — section followed by a × 8 repeat marker
+       { lines }                         — unlabeled continuation of the previous section
+     Use [] (or omit the song) to show "Lyrics coming soon." Re-upload this file to update. */
   const LYRICS = {
-    "stay-up": "",
-    "circles": "",
-    "back-2-rock": "",
-    "the-wheel": ""
+    "stay-up": [
+      {
+        label: "Verse",
+        lines: [
+          "What goes up",
+          "Must come down",
+          "I stay up",
+          "And I stay strung out",
+          "All is well",
+          "if there is light inside",
+          "But time will tell",
+          "If we were wrong or right",
+          "Oooooooo, wrong or right"
+        ]
+      },
+      {
+        label: "Hook",
+        lines: [
+          "What goes up",
+          "Must come down",
+          "But I stay up"
+        ]
+      },
+      {
+        label: "Verse 2",
+        lines: [
+          "Sun comes up",
+          "Sun goes down",
+          "Take my chances",
+          "Take my own route",
+          "If you will",
+          "Make your mind up now",
+          "Give everything up",
+          "‘Fore you’re times run out",
+          "Oooooo, times run out",
+          "Yeahhhhhhhhhhhh"
+        ]
+      },
+      {
+        label: "Hook",
+        lines: [
+          "Sun comes up",
+          "Sun goes down",
+          "But I STAY UP"
+        ]
+      },
+      { label: "Solo", instrumental: true },
+      {
+        label: "Bridge-building part",
+        lines: [
+          "What goes up",
+          "What goes up",
+          "What goes up",
+          "Yeah, it must come down",
+          "What goes up",
+          "What goes up",
+          "What goes up",
+          "I said it must come down",
+          "Sun comes up",
+          "Sun comes up",
+          "Sun comes up",
+          "And the sun goes down",
+          "Sun comes up",
+          "Sun comes up",
+          "Sun comes up",
+          "And the sun goes downnnnnnnnnnnn"
+        ]
+      }
+    ],
+    "circles": [
+      {
+        label: "Verse",
+        lines: [
+          "You don’t know my pain",
+          "You don’t know my life",
+          "You don’t know my story",
+          "You can’t tell me a thing",
+          "You haven’t got the right",
+          "Your input just bores me",
+          "You think you know my heart",
+          "You think you know who I am",
+          "You haven’t got a clue",
+          "Cause I knew right from the start",
+          "You’d never understand",
+          "That’s why I’m asking you"
+        ]
+      },
+      {
+        label: "Hook",
+        lines: [
+          "Why do we go in circles",
+          "Why do we fall victim to this game"
+        ]
+      },
+      {
+        label: "Verse 2",
+        lines: [
+          "You love to see me hurt",
+          "You love to make me bleed",
+          "You hate to lose the fight",
+          "You’d stomp my heart in the dirt",
+          "And bring me to my knees",
+          "Shoot me out of the sky",
+          "Break every promise you make",
+          "Turn every memory to shame",
+          "Feed me nothing but lies",
+          "Choke on everything that you say",
+          "Cause it ends today",
+          "I’m taking back my pride"
+        ]
+      },
+      {
+        label: "Hook",
+        lines: [
+          "Why do we go in circles",
+          "Why do we fall victim to this game",
+          "How can you know my history",
+          "How can you know who I am"
+        ]
+      },
+      { label: "Solo", instrumental: true },
+      {
+        label: "Hook",
+        lines: [
+          "Why do we go in circles",
+          "Why do we fall victim to this game",
+          "How can you know my history",
+          "How can you know who I am",
+          "Who I am",
+          "Who I am",
+          "Who I am",
+          "Who I am"
+        ]
+      }
+    ],
+    "back-2-rock": [
+      {
+        label: "Verse",
+        lines: [
+          "I call all of the girls",
+          "All around the world",
+          "Show me that you know how to roll",
+          "Cause you’re twisting and turning",
+          "Your body is burning",
+          "You’re rocking down to your soul",
+          "And you find your way to a meaning",
+          "When you find your way",
+          "BACK TO ROCK"
+        ]
+      },
+      {
+        label: "Verse 2",
+        lines: [
+          "I call all of the girls",
+          "All around the world",
+          "Show me that you’re ready to roll",
+          "Cause the live and the lonely",
+          "Come as one only to worship that sacred stone",
+          "Now raise your hands to the ceiling",
+          "If you feel the way that I feel",
+          "SHOUT"
+        ]
+      },
+      { label: "Solo", instrumental: true },
+      {
+        label: "Bridge",
+        lines: [
+          "Ohhhhhh back to rock",
+          "Back to rock",
+          "Back to rock",
+          "Back to rock"
+        ],
+        repeat: 8
+      },
+      {
+        lines: [
+          "Now raise your hands to the ceiling",
+          "If you feel the way that I feel",
+          "Ohhh back to rock",
+          "Back to rock",
+          "Back to rock",
+          "You know you’ve found your wayyyyyy",
+          "Back to rock!!!!"
+        ]
+      }
+    ],
+    "the-wheel": [
+      {
+        label: "Verse",
+        lines: [
+          "Heading down",
+          "Towards the sky",
+          "My feet ain’t left the ground",
+          "My head is beating",
+          "To no surprise",
+          "I cheat my way around"
+        ]
+      },
+      {
+        label: "Hook",
+        lines: [
+          "I wanna know how it feels",
+          "I wanna know what is real"
+        ]
+      },
+      {
+        label: "Post hook/comedown",
+        lines: [
+          "I wanna know how it feels",
+          "I wanna know what is real"
+        ]
+      },
+      {
+        label: "Verse",
+        lines: [
+          "Searching for my sweet surrender",
+          "Waiting for my grace",
+          "My heart is beating",
+          "I’m growing older",
+          "I’ll never see the day"
+        ]
+      },
+      {
+        label: "Hook",
+        lines: [
+          "I wanna know how it feels",
+          "I wanna know what is real",
+          "I wanna know how you feel",
+          "I wanna let go of the wheel",
+          "Yeahhhhhhh"
+        ]
+      },
+      { label: "Solo", instrumental: true },
+      {
+        label: "Final hook over halftime drums",
+        lines: [
+          "I wanna know how it feels",
+          "I wanna know what is real",
+          "I wanna know how your feel",
+          "I wanna let go of the wheel",
+          "YEAHHHHHHHH 👹👹👹"
+        ]
+      }
+    ]
   };
 
   /* Stage progress Rob publishes. For each song, map a stage name to "done".
