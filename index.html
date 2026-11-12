@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Peril Suite · EP 2</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@400;700&family=Cinzel:wght@400;500;600;700&family=Oswald:wght@300;400;500;600;700&family=Special+Elite&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css?v=202611121405">
+</head>
+<body class="locked">
+
+<div id="splash" class="splash" role="dialog" aria-labelledby="splash-title" aria-modal="true">
+  <div class="splash-tex" aria-hidden="true"></div>
+  <div class="sand" aria-hidden="true"></div>
+  <h1 id="splash-title" class="sr">Peril Suite — sign in</h1>
+  <div class="splash-mark">
+    <img class="hourglass-hero" src="assets/brand/ps-hourglass.png" width="800" height="800" alt="Peril Suite" onerror="this.style.display='none';var f=this.nextElementSibling;if(f)f.hidden=false;">
+    <div class="hourglass-fallback" hidden>
+      <img src="assets/brand/hourglass-motif.svg" width="200" height="300" alt="">
+      <div class="wm-name">Peril Suite</div>
+    </div>
+  </div>
+  <div class="album" aria-hidden="true"><span>EP 2</span></div>
+  <form id="enter">
+    <label for="code">Enter your login code</label>
+    <input id="code" name="code" type="text" autocomplete="username" autocapitalize="characters" spellcheck="false" required>
+    <button type="submit">Enter</button>
+    <p id="gate-err" class="err" role="alert"></p>
+  </form>
+  <p class="fine">Access is by personal login code. This is a simple gate, not strong security.</p>
+  <div class="splash-sil" aria-hidden="true"></div>
+</div>
+
+<div id="app" hidden>
+  <div class="proof" role="note" id="status-banner">PERIL SUITE · EP 2 · STATUSES CONFIRMED WHERE CHECKED · SAVED ON THIS DEVICE</div>
+  <div class="bar-user"><span>Signed in as <b id="who">—</b> <span class="role" id="who-role"></span></span><button type="button" class="signout" id="signout">Sign out</button></div>
+  <div class="storage-note" id="storage-label" role="status"></div>
+
+  <header class="hero has-banner">
+    <div class="hero-bg" aria-hidden="true">
+      <div class="hero-art"></div>
+      <div class="hero-glow"></div>
+      <div class="hero-grain"></div>
+      <div class="hero-sand"></div>
+    </div>
+    <span class="corner c1" aria-hidden="true"></span><span class="corner c2" aria-hidden="true"></span>
+    <span class="corner c3" aria-hidden="true"></span><span class="corner c4" aria-hidden="true"></span>
+    <div class="hero-in">
+      <h1 class="sr">Peril Suite — EP 2 record tracker</h1>
+      <div class="hero-lockup">
+        <div class="hero-crest-stack">
+          <div class="hero-crest" aria-hidden="true">
+            <span class="crest-rule"></span>
+            <span class="orn-star"></span>
+            <img class="crest-hourglass" src="assets/brand/ps-hourglass.png" width="160" height="160" alt="" onerror="this.src='assets/brand/hourglass-motif.svg'">
+            <span class="orn-star"></span>
+            <span class="crest-rule"></span>
+          </div>
+          <p class="wm-kicker">A record by</p>
+        </div>
+        <div class="logo-wrap typographic">
+          <img class="hero-wordmark" src="assets/brand/ps-wordmark.png" width="1280" height="420" alt="Peril Suite" onerror="this.style.display='none';var f=this.nextElementSibling;if(f)f.hidden=false;">
+          <div class="wm-fallback hero-fallback" hidden>
+            <p class="wm-title">Peril Suite</p>
+          </div>
+          <div class="hero-wordmark-space" aria-hidden="true"></div>
+          <div class="hero-caption">
+            <div class="wm-flourish" aria-hidden="true">
+              <span class="orn-rule"></span>
+              <span class="orn-star"></span>
+              <span class="orn-rule"></span>
+            </div>
+            <p class="wm-sub">Four songs · produced by Rob Hitchcock</p>
+            <div class="hero-road" aria-label="EP 2">
+              <p class="ep-badge">EP 2</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="hero-foot">
+      <p class="tag">Record tracker · <span id="song-count">4</span> songs · pre / prod / post</p>
+      <div class="countdown" id="countdown" aria-label="Countdown to the end of pre-production">
+        <img class="cd-emblem" src="assets/brand/ps-hourglass.png" width="200" height="200" alt="" onerror="this.src='assets/brand/hourglass-motif.svg'">
+        <div class="cd-kicker">Pre-production ends</div>
+        <div class="cd-body" id="cd-body"></div>
+        <img class="cd-emblem" src="assets/brand/ps-hourglass.png" width="200" height="200" alt="" onerror="this.src='assets/brand/hourglass-motif.svg'">
+      </div>
+    </div>
+  </header>
+  <div class="cut" aria-hidden="true"></div>
+
+  <main class="wrap">
+    <section aria-label="Summary" class="stats">
+      <div class="stat"><div class="n" id="song-count-stat">4</div><div class="l">Songs in play</div></div>
+      <div class="stat"><div class="n s" id="pre-count">—</div><div class="l">Pre-pro stages · confirmed</div></div>
+      <div class="stat"><div class="n s" id="drum-stat">TBA</div><div class="l">Drum tracking · The Orb, Austin</div></div>
+      <div class="stat"><div class="n s" id="twitch-stat">2026</div><div class="l">Twitch bass lock · year end</div></div>
+    </section>
+    <nav aria-label="Open a section"><p class="kicker">Sections</p><div class="tiles" id="tiles"></div></nav>
+    <section aria-label="Breakout sections" id="breakouts"></section>
+  </main>
+  <div class="cut ox" aria-hidden="true"></div>
+  <footer><div class="footer-sil" aria-hidden="true"></div><p>Peril Suite · EP 2 · reviews and stage checks are saved on this device.</p></footer>
+</div>
+
+<script src="data.js?v=202611121340"></script>
+<script src="storage.js?v=202611121340"></script>
+<script src="app.js?v=202611121352"></script>
+<script>
+  document.getElementById("song-count-stat").textContent = window.PS_DATA.SONGS.length;
+</script>
+</body>
+</html>
