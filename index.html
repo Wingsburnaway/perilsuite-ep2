@@ -7,35 +7,12 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@400;700&family=Cinzel:wght@400;500;600;700&family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Oswald:wght@300;400;500;600;700&family=Special+Elite&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="styles.css?v=202611121655">
+<link rel="stylesheet" href="styles.css?v=202611121800">
 </head>
-<body class="locked">
+<body>
 
-<div id="splash" class="splash" role="dialog" aria-labelledby="splash-title" aria-modal="true">
-  <div class="splash-tex" aria-hidden="true"></div>
-  <div class="sand" aria-hidden="true"></div>
-  <h1 id="splash-title" class="sr">Peril Suite — sign in</h1>
-  <div class="splash-mark">
-    <img class="hourglass-hero" src="assets/brand/ps-hourglass.png" width="800" height="800" alt="Peril Suite" onerror="this.style.display='none';var f=this.nextElementSibling;if(f)f.hidden=false;">
-    <div class="hourglass-fallback" hidden>
-      <img src="assets/brand/hourglass-motif.svg" width="200" height="300" alt="">
-      <div class="wm-name">Peril Suite</div>
-    </div>
-  </div>
-  <div class="album" aria-hidden="true"><span>EP 2</span></div>
-  <form id="enter">
-    <label for="code">Enter your password</label>
-    <input id="code" name="code" type="text" autocomplete="current-password" autocapitalize="none" spellcheck="false" required>
-    <button type="submit">Enter</button>
-    <p id="gate-err" class="err" role="alert"></p>
-  </form>
-  <p class="fine">Access is by personal password. This is a simple gate, not strong security.</p>
-  <div class="splash-sil" aria-hidden="true"></div>
-</div>
-
-<div id="app" hidden>
+<div id="app">
   <div class="proof" role="note" id="status-banner">PERIL SUITE · EP 2 · STATUSES AS PUBLISHED</div>
-  <div class="bar-user"><span>Signed in as <b id="who">—</b> <span class="role" id="who-role"></span></span><button type="button" class="signout" id="signout">Sign out</button></div>
 
   <header class="hero has-banner">
     <div class="hero-bg" aria-hidden="true">
@@ -105,10 +82,8 @@
   <footer><div class="footer-sil" aria-hidden="true"></div><p>Peril Suite · EP 2</p></footer>
 </div>
 
-<script src="data.js?v=202611121655"></script>
-<script src="rates.enc.js?v=202611121655"></script>
-<script src="rates-gate.js?v=202611121655"></script>
-<script src="app.js?v=202611121655"></script>
+<script src="data.js?v=202611121800"></script>
+<script src="app.js?v=202611121800"></script>
 <script>
   document.getElementById("song-count-stat").textContent = window.PS_DATA.SONGS.length;
 </script>

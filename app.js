@@ -1,13 +1,11 @@
 (function () {
-  const { MEMBERS, PHASES, VOX, SONGS, LYRICS, STAGE_STATUS, THEMES, ALBUM_SUMMARY, HERO_LINES, PROJECT, SCHEDULE, TEAM, STAGE_OWNERS } = window.PS_DATA;
+  const { PHASES, VOX, SONGS, LYRICS, STAGE_STATUS, THEMES, ALBUM_SUMMARY, HERO_LINES, PROJECT, SCHEDULE, TEAM, STAGE_OWNERS } = window.PS_DATA;
   const NSTAGES = PHASES.reduce((n, p) => n + p.stages.length, 0);
   const LBL = { done: "Done (confirmed)", unc: "Unknown", tbd: "Unknown" };
 
-  const userKey = "ps-ep2-user";
   const $ = (s, r = document) => r.querySelector(s);
   const $$ = (s, r = document) => [...r.querySelectorAll(s)];
   const esc = (s) => String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/"/g, "&quot;");
-  let sessionPass = null;
   let phFilter = "pre";
   const st = (stage, song) => {
     const row = (STAGE_STATUS && STAGE_STATUS[song.id]) || {};
@@ -25,38 +23,6 @@
       return new Date(iso).toLocaleString("en-US", { timeZone: "America/Chicago", dateStyle: "medium", timeStyle: "short" }) + " CT";
     } catch { return iso; }
   };
-  const memberByName = (name) => MEMBERS.find((m) => m.name === name) || null;
-  /* Passwords are compared by SHA-256 of the lowercased input (see data.js / private/login_codes.md). */
-  async function sha256Hex(str) {
-    const buf = new TextEncoder().encode(str);
-    if (window.crypto && crypto.subtle) {
-      const h = await crypto.subtle.digest("SHA-256", buf);
-      return [...new Uint8Array(h)].map((b) => b.toString(16).padStart(2, "0")).join("");
-    }
-    return sha256Fallback(buf);
-  }
-  function sha256Fallback(bytes) {
-    const K = [0x428a2f98,0x71374491,0xb5c0fbcf,0xe9b5dba5,0x3956c25b,0x59f111f1,0x923f82a4,0xab1c5ed5,0xd807aa98,0x12835b01,0x243185be,0x550c7dc3,0x72be5d74,0x80deb1fe,0x9bdc06a7,0xc19bf174,0xe49b69c1,0xefbe4786,0x0fc19dc6,0x240ca1cc,0x2de92c6f,0x4a7484aa,0x5cb0a9dc,0x76f988da,0x983e5152,0xa831c66d,0xb00327c8,0xbf597fc7,0xc6e00bf3,0xd5a79147,0x06ca6351,0x14292967,0x27b70a85,0x2e1b2138,0x4d2c6dfc,0x53380d13,0x650a7354,0x766a0abb,0x81c2c92e,0x92722c85,0xa2bfe8a1,0xa81a664b,0xc24b8b70,0xc76c51a3,0xd192e819,0xd6990624,0xf40e3585,0x106aa070,0x19a4c116,0x1e376c08,0x2748774c,0x34b0bcb5,0x391c0cb3,0x4ed8aa4a,0x5b9cca4f,0x682e6ff3,0x748f82ee,0x78a5636f,0x84c87814,0x8cc70208,0x90befffa,0xa4506ceb,0xbef9a3f7,0xc67178f2];
-    let H = [0x6a09e667,0xbb67ae85,0x3c6ef372,0xa54ff53a,0x510e527f,0x9b05688c,0x1f83d9ab,0x5be0cd19];
-    const l = bytes.length, n = ((l + 9 + 63) >> 6) << 6, m = new Uint8Array(n);
-    m.set(bytes); m[l] = 0x80; const dv = new DataView(m.buffer); dv.setUint32(n - 4, l * 8);
-    const r = (x, y) => (x >>> y) | (x << (32 - y)), W = new Uint32Array(64);
-    for (let o = 0; o < n; o += 64) {
-      for (let i = 0; i < 16; i++) W[i] = dv.getUint32(o + i * 4);
-      for (let i = 16; i < 64; i++) { const s0 = r(W[i-15],7)^r(W[i-15],18)^(W[i-15]>>>3), s1 = r(W[i-2],17)^r(W[i-2],19)^(W[i-2]>>>10); W[i] = (W[i-16]+s0+W[i-7]+s1)|0; }
-      let [a,b,c,d,e,f,g,h] = H;
-      for (let i = 0; i < 64; i++) { const t1 = (h+(r(e,6)^r(e,11)^r(e,25))+((e&f)^(~e&g))+K[i]+W[i])|0, t2 = ((r(a,2)^r(a,13)^r(a,22))+((a&b)^(a&c)^(b&c)))|0; h=g; g=f; f=e; e=(d+t1)|0; d=c; c=b; b=a; a=(t1+t2)|0; }
-      H = H.map((v, i) => (v + [a,b,c,d,e,f,g,h][i]) | 0);
-    }
-    return H.map((v) => (v >>> 0).toString(16).padStart(8, "0")).join("");
-  }
-  const matchMember = async (raw) => {
-    const n = String(raw || "").trim().toLowerCase();
-    if (!n) return null;
-    const h = await sha256Hex(n);
-    return MEMBERS.find((m) => m.hash === h) || null;
-  };
-
   const statusRank = (status) => {
     if (status === "done") return 3;
     if (status === "tbd") return 0;
@@ -95,72 +61,6 @@
     run();
     const tid = setInterval(run, 1000);
   }
-  const KEEP_MS = 30 * 24 * 60 * 60 * 1000; // stay signed in 30 days
-  function loadUser() {
-    try {
-      const v = JSON.parse(localStorage.getItem(userKey) || "null");
-      if (v && memberByName(v.u) && v.exp > Date.now()) return v.u;
-    } catch (e) {}
-    localStorage.removeItem(userKey);
-    return null;
-  }
-  function saveUser(u) { localStorage.setItem(userKey, JSON.stringify({ u, exp: Date.now() + KEEP_MS })); }
-  let user = loadUser();
-  if (user) saveUser(user);
-
-  function gate() {
-    const splash = $("#splash");
-    const app = $("#app");
-    if (user) {
-      splash.hidden = true;
-      app.hidden = false;
-      document.body.classList.remove("locked");
-      $("#who").textContent = user;
-      const roleEl = $("#who-role");
-      const mem = memberByName(user);
-      if (roleEl) roleEl.textContent = mem && mem.role ? "· " + mem.role : "";
-      return true;
-    }
-    splash.hidden = false;
-    app.hidden = true;
-    document.body.classList.add("locked");
-    $("#code").focus();
-    return false;
-  }
-
-  $("#enter").addEventListener("submit", async (e) => {
-    e.preventDefault();
-    const typed = $("#code").value.trim().toLowerCase();
-    const found = await matchMember(typed);
-    const err = $("#gate-err");
-    if (!found) {
-      err.textContent = "That password isn't recognized.";
-      $("#code").select();
-      return;
-    }
-    user = found.name;
-    sessionPass = typed;
-    saveUser(user);
-    if (window.PSRates && window.PSRates.canSee(user)) {
-      try { await window.PSRates.unlock(user, sessionPass); }
-      catch (unlockErr) { /* signed in; rates section will ask again if needed */ }
-    }
-    err.textContent = "";
-    updateHeroCounts();
-    paintBreakouts();
-    setPh(phFilter);
-    gate();
-  });
-  $("#signout").addEventListener("click", () => {
-    localStorage.removeItem(userKey);
-    user = null;
-    sessionPass = null;
-    if (window.PSRates) window.PSRates.lock();
-    $("#code").value = "";
-    paintBreakouts();
-    gate();
-  });
-
   /* ---- views ---- */
   const LEG = `<div class="legend">${mk("done")}<span>Done (confirmed)</span>${mk("unc")}<span>Unknown — not yet reported</span></div>`;
 
@@ -468,7 +368,7 @@
       ? "Pre-production runs through the end of 2026, in this order: MIDI Drums, Guitar, Bass, Vocals, Drum Demo. The bass tracked here is the record bass (Twitch exits by year end). Status stays unknown until it is marked done in the published project data."
       : p.id === "prod"
         ? "Drums at The Orb (date TBA, targeting late January / early February 2027), with Jman as drummer. Jman owns drums, including The Orb tracking and the drum-edit stage. Then rhythm guitar, lead guitar, and vocals — rhythm guitar and vocals proposed at AB's studio. Lead Guitars and Aux/Other have no editing phase. Re-amp is 3 hours at Hendyamps after all elements are recorded and edited."
-        : "Mixing by Rob Hitchcock, then Atmos mixes (Nick Matzke, at the verified Tom Houck EP rate) and mastering (Chris Henderson; rate TBD). Amounts are in Rates & budget. Status is unknown until it is marked done in the published project data.";
+        : "Mixing by Rob Hitchcock, then Atmos mixes (Nick Matzke, at the verified Tom Houck EP rate) and mastering (Chris Henderson; rate TBD). Status is unknown until it is marked done in the published project data.";
     const confirmedPct = Math.round(100 * SONGS.reduce((n, s) => n + p.stages.filter((x) => st(x, s) === "done").length, 0) / (p.stages.length * nSongs));
     const label = confirmedPct ? confirmedPct + "% confirmed · rest unknown" : "Unknown · nothing confirmed yet";
     return `<div class="two"><div><p class="lead">${p.stages.length} stages × ${nSongs} songs. ${d}</p><ul class="list">${p.stages.map((x) => {
@@ -490,50 +390,11 @@
       <div class="facts">${items}</div>`;
   }
 
-  function rateRows(rows, numericLast) {
-    return (rows || []).map((r) => {
-      const tot = /remaining|balance/i.test(r.item);
-      return `<tr class="${tot ? "tot" : ""}"><td>${esc(r.item)}</td><td>${esc(r.rate || "")}</td><td>${esc(r.qty || "")}</td><td class="n">${esc(r.amount || "")}</td><td class="note-cell">${esc(r.note || "")}</td></tr>`;
-    }).join("");
-  }
-  function ratesTables(R) {
-    const notes = (R.sourceNotes || []).map((n) => `<li>${esc(n)}</li>`).join("");
-    const studios = (R.studiosOnFile || []).map((strow) =>
-      `<tr><td>${esc(strow.studio)}</td><td>${esc(strow.location)}</td><td class="n">${esc(strow.rate)}</td></tr>`
-    ).join("");
-    return `<p class="lead">Figures below are only those Rob gave for this project or that were found on file. Anything not quoted is marked TBD — no prices were invented. This section is encrypted in the public files and opens only for AB and Rob.</p>
-      <ul class="src-notes">${notes}</ul>
-      <h4 class="ph">Producer</h4>
-      <table class="rate-table"><thead><tr><th>Item</th><th>Rate</th><th>Qty</th><th>Amount</th><th>Notes</th></tr></thead>
-      <tbody>${rateRows(R.producer)}</tbody></table>
-      <h4 class="ph">Outside / studio</h4>
-      <table class="rate-table"><thead><tr><th>Item</th><th>Rate</th><th>Qty</th><th>Amount</th><th>Notes</th></tr></thead>
-      <tbody>${rateRows(R.outside)}</tbody></table>
-      <h4 class="ph">Studio options on file</h4>
-      <p class="note">From the Nov 4, 2026 agreement. Estimates only, subject to change. The Orb (this record's drum room) is listed as TBD.</p>
-      <table class="rate-table"><thead><tr><th>Studio</th><th>Location</th><th>Rate</th></tr></thead>
-      <tbody>${studios}</tbody></table>`;
-  }
-  function ratesView() {
-    if (!window.PSRates || !window.PSRates.canSee(user)) {
-      return `<p class="lead">Rates & budget is only available to AB and Rob.</p>`;
-    }
-    const cached = window.PSRates.getCached();
-    if (cached) return ratesTables(cached);
-    return `<p class="lead">This section is encrypted and only opens for AB and Rob. Enter your password to view the figures for the rest of this browser session.</p>
-      <form class="rates-unlock" data-rates-unlock>
-        <label for="rates-pass">Password</label>
-        <input id="rates-pass" name="rates-pass" type="password" autocomplete="current-password" required>
-        <button class="btn save" type="submit">Unlock Rates & budget</button>
-        <p class="err" data-rates-err role="alert"></p>
-      </form>`;
-  }
-
   function teamView() {
     const items = (TEAM || []).map((t) =>
       `<li><b>${esc(t.name)}</b><span class="team-role">${esc(t.role)}</span>${t.detail ? `<span class="team-detail">${esc(t.detail)}</span>` : ""}</li>`
     ).join("");
-    return `<p class="lead">Everyone with a login for this site.</p>
+    return `<p class="lead">The team on this record.</p>
       <ul class="team-list">${items}</ul>
       <p class="note">Twitch's pre-production bass is the bass on the record, which lets Twitch leave the project by the end of 2026. Drums will be rigidly quantized so that bass lines up. Jman owns drums on this EP, including tracking at The Orb and the drum-edit stage. AB's studio remains the proposed room for rhythm guitar and vocals.</p>`;
   }
@@ -544,7 +405,7 @@
     <h4 class="ph">Official art on file</h4>
     <div class="brand-grid">
       <figure class="bfig dark wide"><img src="assets/brand/ps-banner-stage.webp" alt="Peril Suite stage banner: gothic wordmark over a silhouetted band and crowd" width="2000" height="1000"><figcaption><b>Stage banner</b><span>Hero backdrop and official wordmark — assets/brand/ps-banner-stage.webp</span></figcaption></figure>
-      <figure class="bfig dark wide"><img src="assets/brand/ps-stage-silhouette.webp" alt="Stage silhouette strip: band, crowd, and rigging" width="2000" height="456"><figcaption><b>Stage silhouette</b><span>Footer and splash bottom motif — assets/brand/ps-stage-silhouette.webp</span></figcaption></figure>
+      <figure class="bfig dark wide"><img src="assets/brand/ps-stage-silhouette.webp" alt="Stage silhouette strip: band, crowd, and rigging" width="2000" height="456"><figcaption><b>Stage silhouette</b><span>Footer motif — assets/brand/ps-stage-silhouette.webp</span></figcaption></figure>
     </div>
     <h4 class="ph">Corner filigree</h4>
     <div class="brand-grid filigree-row">
@@ -553,7 +414,7 @@
       <figure class="bfig dark"><img src="assets/brand/ps-filigree-bl.webp" alt="Bottom-left corner filigree" width="320" height="320"><figcaption><b>Bottom left</b></figcaption></figure>
       <figure class="bfig dark"><img src="assets/brand/ps-filigree-br.webp" alt="Bottom-right corner filigree" width="320" height="320"><figcaption><b>Bottom right</b></figcaption></figure>
     </div>
-    <p class="note">Filigree ornaments appear on the splash (top corners). The official banner already carries them in the hero, and the footer silhouette includes the bottom pair. Still waiting on <code>ps-hourglass.png</code>, <code>ps-wordmark.png</code>, and <code>ps-cover.png</code> as separate files — the splash hourglass and typographic fallback stay in place until those arrive.</p>`;
+    <p class="note">Filigree ornaments appear on the hero banner, and the footer silhouette includes the bottom pair. Still waiting on <code>ps-hourglass.png</code>, <code>ps-wordmark.png</code>, and <code>ps-cover.png</code> as separate files — the hero hourglass and typographic fallback stay in place until those arrive.</p>`;
   }
 
   const preMeta = () => {
@@ -573,14 +434,8 @@
       { id: "playlist", t: "Playlist", m: PLAYLIST.length ? `${PLAYLIST.length} tracks` : "No mixes on file yet", b: playlist },
       { id: "schedule", t: "Schedule", m: "Pre-pro through 2026 · drums TBA", b: scheduleView }
     ];
-    if (window.PSRates && window.PSRates.canSee(user)) {
-      list.push({ id: "rates", t: "Rates & budget", m: "Encrypted · AB and Rob", b: ratesView });
-      open.add("rates");
-    } else {
-      open.delete("rates");
-    }
     PHASES.forEach((p) => list.push({ id: p.id, t: p.name, m: p.id === "pre" ? preMeta() : p.id === "prod" ? "Drums TBA · then guitars & vocals" : "Mix · Atmos · Master", b: () => phase(p) }));
-    list.push({ id: "team", t: "Team", m: `${MEMBERS.length} members`, b: teamView });
+    list.push({ id: "team", t: "Team", m: `${(TEAM || []).length} members`, b: teamView });
     list.push({ id: "art", t: "Artwork / brand", m: "Stage banner · filigree · silhouette", b: ART });
     return list;
   };
@@ -762,24 +617,6 @@
     seekFrac(f);
   });
 
-  document.addEventListener("submit", async (e) => {
-    const unlock = e.target.closest("form[data-rates-unlock]");
-    if (unlock) {
-      e.preventDefault();
-      const typed = (unlock.querySelector("#rates-pass") || {}).value || "";
-      const err = unlock.querySelector("[data-rates-err]");
-      try {
-        await window.PSRates.unlock(user, typed.trim().toLowerCase());
-        sessionPass = typed.trim().toLowerCase();
-        if (err) err.textContent = "";
-        refresh();
-      } catch (ex) {
-        if (err) err.textContent = "Could not unlock Rates & budget. Check the password and try again.";
-      }
-      return;
-    }
-  });
-
   function updateHeroCounts() {
     const n = SONGS.length;
     const prePhase = PHASES.find((p) => p.id === "pre");
@@ -831,5 +668,4 @@
   updateHeroCounts();
   paintBreakouts();
   setPh("pre");
-  gate();
 })();

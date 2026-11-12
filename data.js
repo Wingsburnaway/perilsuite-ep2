@@ -1,20 +1,7 @@
 /* Peril Suite EP 2 catalog and project facts.
    Edit this file to add songs, links, schedule notes, lyrics, or published stage status.
-   Rates & budget live encrypted in rates.enc.js — plaintext figures stay in private/rates.json.
    Brand files live in assets/brand/ — see README. */
 window.PS_DATA = (() => {
-  /* Login passwords are NOT in this file — only SHA-256 hashes of the lowercased password.
-     Plain passwords live in private/login_codes.md (never deploy the private/ folder).
-     Still a client-side gate (same model as WBA), just without readable passwords in source. */
-  const MEMBERS = [
-    { name: "Brice", role: "Singer (vocals)", hash: "783d345a2f6695e4a59caa7e0946bc869c22dd089af1d4dff6adc486072e4e52", also: "Brice Haiden" },
-    { name: "Twitch", role: "Session bassist", hash: "86ec5898c66dcc3f4a96ea31ff47013d3b6be71c066bbd86c9743620e1a57224" },
-    { name: "Gary", role: "Session guitarist", hash: "137bbb75d50a7af587360cef144bae78b51039266f9701fb5500e103043ed6ba", also: "Garrett Turney" },
-    { name: "AB", role: "Manager", hash: "7a5c6457e3f22efb81f5d9e743cef37585e0dd431822121f40c4138f369df6d0" },
-    { name: "Jman", role: "Drummer", hash: "ecb0472b9ad4c17f5cbe732da9886d0f9684d25f59a16b697ce12a66b1b8622f" },
-    { name: "Rob", role: "Producer", hash: "4102e5b01c2cab19d3496d512443ddedf4acca73bf3d9dc27e451ab3ba6f5f53", also: "Rob Hitchcock" }
-  ];
-
   /* Pre-production order (through end of 2026): MIDI Drums → Guitar → Bass → Vocals → Drum Demo.
      Production tracks: Drums, Bass, Rhythm Guitars, Lead Guitars, Vocals, Aux/Other.
      Editing phases exist for every track except Aux/Other and Lead Guitars.
@@ -377,25 +364,25 @@ window.PS_DATA = (() => {
       phase: "Re-amp",
       when: "After all elements are recorded and edited, before mixing and mastering",
       where: "Hendyamps Studio, Richmond, TX · 3 hours",
-      detail: "Booked as a 3-hour re-amp date for this record at Hendyamps Studio. The studio rate and extended total are in Rates & budget (AB and Rob) and will be confirmed when booked."
+      detail: "Booked as a 3-hour re-amp date for this record at Hendyamps Studio. The studio rate and extended total will be confirmed when booked."
     },
     {
       phase: "Mixing",
       when: "After re-amp",
       where: "Rob Hitchcock",
-      detail: "Mixing by Rob Hitchcock (Nov 4, 2026 Peril Suite EP agreement). Up to five revision rounds per song are included; later mixes are billed per the rate on file in Rates & budget (AB and Rob)."
+      detail: "Mixing by Rob Hitchcock (Nov 4, 2026 Peril Suite EP agreement). Up to five revision rounds per song are included; later mixes are billed per the rate on file."
     },
     {
       phase: "Atmos mixes",
       when: "After (or alongside) stereo mixes",
       where: "Remote — Nick Matzke",
-      detail: "Offered at the verified Tom Houck EP rate for Nick Matzke. Rob noted this rate is available for all projects he produces. Figures are in Rates & budget (AB and Rob)."
+      detail: "Offered at the verified Tom Houck EP rate for Nick Matzke. Rob noted this rate is available for all projects he produces."
     },
     {
       phase: "Mastering",
       when: "After mixes",
       where: "Chris Henderson of Hendyamps (as on prior work / the Nov 4, 2026 agreement)",
-      detail: "Mastering engineer on file: Chris Henderson. A rate was not quoted for this project. A prior-project figure exists but is not applied here; see Rates & budget (AB and Rob)."
+      detail: "Mastering engineer on file: Chris Henderson. A rate was not quoted for this project. A prior-project figure exists but is not applied here."
     }
   ];
 
@@ -415,7 +402,7 @@ window.PS_DATA = (() => {
   };
 
   return {
-    MEMBERS, PHASES, VOX, SONGS: songs, THEMES, ALBUM_SUMMARY, HERO_LINES,
+    PHASES, VOX, SONGS: songs, THEMES, ALBUM_SUMMARY, HERO_LINES,
     LYRICS, STAGE_STATUS, PROJECT, SCHEDULE, TEAM, STAGE_OWNERS
   };
 })();
